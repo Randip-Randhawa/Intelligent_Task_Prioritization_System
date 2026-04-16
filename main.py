@@ -22,7 +22,10 @@ works correctly and that the ML model successfully learned the heuristic pattern
 
 import sys
 import os
+import json
 from datetime import datetime
+
+import pandas as pd
 
 # Make sure project root is on sys.path when running as a script
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -73,7 +76,7 @@ def run_phase2(tasks, reference_time):
 
     print("[Step 2] Training Random Forest Regressor...")
     ml_scorer = MLScorer(n_estimators=100, random_state=42)
-    ml_scorer.train(train_df, verbose=True)
+    metrics = ml_scorer.train(train_df, verbose=True)
 
     print("\n[Step 3] Ranking the same demo tasks with the ML model...")
     ml_ranked = ml_scorer.rank(tasks, reference_time=reference_time)
@@ -82,7 +85,7 @@ def run_phase2(tasks, reference_time):
         reference_time=reference_time,
         title="ML Model Task Ranking (Random Forest Regressor)",
     )
-    return ml_ranked, ml_scorer
+    return ml_ranked, ml_scorer, train_df, metrics
 
 
 def run_comparison(heuristic_ranked, ml_ranked, k=3):
@@ -108,6 +111,201 @@ def validate_all_tasks(tasks, reference_time):
             print(f"  ! {w}")
     else:
         print("\n[Validation] All task inputs look valid.")
+
+
+def create_output_dir(base_dir="results"):
+    """Create a timestamped output directory for run artifacts."""
+    run_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = os.path.join(base_dir, f"run_{run_stamp}")
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
+
+
+def _ranking_to_df(ranking, reference_time, has_features=False):
+    rows = []
+    for idx, item in enumerate(ranking, start=1):
+        task = item[0]
+        score = item[1]
+        row = {
+            "rank": idx,
+            "task_id": task.task_id,
+            "name": task.name,
+            "subject": task.subject,
+            "score": score,
+            "difficulty": task.difficulty,
+            "priority": task.priority,
+            "estimated_hours": task.estimated_hours,
+            "available_hours": task.available_hours,
+            "hours_until_deadline": round(task.hours_until_deadline(reference_time), 2),
+        }
+        if has_features and len(item) > 2 and isinstance(item[2], dict):
+            feats = item[2]
+            row.update({
+                "urgency": feats.get("urgency"),
+                "difficulty_norm": feats.get("difficulty"),
+                "priority_norm": feats.get("priority"),
+                "time_pressure": feats.get("time_pressure"),
+            })
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def _save_plots_if_available(output_dir, heuristic_df, ml_df, merged_df):
+    """Save PNG charts if matplotlib is installed; otherwise write a note file."""
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        with open(
+            os.path.join(output_dir, "plot_generation_note.txt"),
+            "w",
+            encoding="utf-8",
+        ) as f:
+            f.write(
+                "Plots were not generated because matplotlib is not installed.\n"
+                "Install it with: pip install matplotlib\n"
+            )
+        return False
+
+    # Horizontal bar chart comparing heuristic and ML scores by task.
+    fig, ax = plt.subplots(figsize=(12, 6))
+    x = range(len(merged_df))
+    width = 0.4
+    ax.bar(
+        [i - width / 2 for i in x],
+        merged_df["heuristic_score"],
+        width=width,
+        label="Heuristic",
+    )
+    ax.bar(
+        [i + width / 2 for i in x],
+        merged_df["ml_score"],
+        width=width,
+        label="ML",
+    )
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(merged_df["task_id"], rotation=45, ha="right")
+    ax.set_ylabel("Score")
+    ax.set_title("Heuristic vs ML Scores by Task")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(os.path.join(output_dir, "score_comparison_by_task.png"), dpi=150)
+    plt.close(fig)
+
+    # Scatter plot of score agreement.
+    fig, ax = plt.subplots(figsize=(7, 6))
+    ax.scatter(merged_df["heuristic_score"], merged_df["ml_score"], alpha=0.8)
+    lo = float(min(merged_df["heuristic_score"].min(), merged_df["ml_score"].min()))
+    hi = float(max(merged_df["heuristic_score"].max(), merged_df["ml_score"].max()))
+    ax.plot([lo, hi], [lo, hi], linestyle="--", color="gray", linewidth=1)
+    ax.set_xlabel("Heuristic Score")
+    ax.set_ylabel("ML Score")
+    ax.set_title("Score Agreement (Heuristic vs ML)")
+    fig.tight_layout()
+    fig.savefig(os.path.join(output_dir, "score_agreement_scatter.png"), dpi=150)
+    plt.close(fig)
+
+    # Top-10 ranking bars for heuristic.
+    fig, ax = plt.subplots(figsize=(12, 6))
+    h_sorted = heuristic_df.sort_values("rank").head(10)
+    ax.barh(h_sorted["task_id"], h_sorted["score"])
+    ax.invert_yaxis()
+    ax.set_xlabel("Score")
+    ax.set_title("Top Tasks by Heuristic Ranking")
+    fig.tight_layout()
+    fig.savefig(os.path.join(output_dir, "heuristic_top_tasks.png"), dpi=150)
+    plt.close(fig)
+
+    # Top-10 ranking bars for ML.
+    fig, ax = plt.subplots(figsize=(12, 6))
+    m_sorted = ml_df.sort_values("rank").head(10)
+    ax.barh(m_sorted["task_id"], m_sorted["score"])
+    ax.invert_yaxis()
+    ax.set_xlabel("Score")
+    ax.set_title("Top Tasks by ML Ranking")
+    fig.tight_layout()
+    fig.savefig(os.path.join(output_dir, "ml_top_tasks.png"), dpi=150)
+    plt.close(fig)
+
+    return True
+
+
+def export_run_artifacts(
+    tasks,
+    reference_time,
+    heuristic_ranked,
+    ml_ranked,
+    comparison,
+    train_df,
+    ml_metrics,
+):
+    """Persist run artifacts (tables, metrics, and optional plots) to disk."""
+    output_dir = create_output_dir()
+
+    heuristic_df = _ranking_to_df(heuristic_ranked, reference_time, has_features=True)
+    ml_df = _ranking_to_df(ml_ranked, reference_time, has_features=False)
+
+    heuristic_df.to_csv(
+        os.path.join(output_dir, "heuristic_ranking.csv"),
+        index=False,
+    )
+    ml_df.to_csv(
+        os.path.join(output_dir, "ml_ranking.csv"), index=False
+    )
+
+    merged_df = (
+        heuristic_df[["task_id", "name", "rank", "score"]]
+        .rename(columns={"rank": "heuristic_rank", "score": "heuristic_score"})
+        .merge(
+            ml_df[["task_id", "rank", "score"]].rename(
+                columns={"rank": "ml_rank", "score": "ml_score"}
+            ),
+            on="task_id",
+            how="inner",
+        )
+    )
+    merged_df["rank_diff"] = merged_df["heuristic_rank"] - merged_df["ml_rank"]
+    merged_df["score_diff"] = merged_df["heuristic_score"] - merged_df["ml_score"]
+    merged_df.to_csv(os.path.join(output_dir, "ranking_comparison.csv"), index=False)
+
+    summary_payload = {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "reference_time": reference_time.isoformat(timespec="seconds"),
+        "n_demo_tasks": len(tasks),
+        "n_training_samples": int(len(train_df)),
+        "ml_metrics": ml_metrics,
+        "comparison": comparison,
+    }
+    with open(os.path.join(output_dir, "summary_metrics.json"), "w", encoding="utf-8") as f:
+        json.dump(summary_payload, f, indent=2)
+
+    with open(os.path.join(output_dir, "analysis_report.md"), "w", encoding="utf-8") as f:
+        f.write("# Run Analysis Report\n\n")
+        f.write(f"- Generated at: {summary_payload['generated_at']}\n")
+        f.write(f"- Reference time: {summary_payload['reference_time']}\n")
+        f.write(f"- Demo tasks: {summary_payload['n_demo_tasks']}\n")
+        f.write(f"- Training samples: {summary_payload['n_training_samples']}\n\n")
+
+        f.write("## Model Metrics\n\n")
+        for key, value in ml_metrics.items():
+            f.write(f"- {key}: {value}\n")
+
+        f.write("\n## Comparison Metrics\n\n")
+        for key, value in comparison.items():
+            f.write(f"- {key}: {value}\n")
+
+        f.write("\n## Saved Files\n\n")
+        f.write("- heuristic_ranking.csv\n")
+        f.write("- ml_ranking.csv\n")
+        f.write("- ranking_comparison.csv\n")
+        f.write("- summary_metrics.json\n")
+
+    plots_generated = _save_plots_if_available(output_dir, heuristic_df, ml_df, merged_df)
+
+    print("\n[Artifacts] Results saved to:", output_dir)
+    if plots_generated:
+        print("[Artifacts] PNG visualizations were generated.")
+    else:
+        print("[Artifacts] PNG visualizations were skipped (see note file).")
 
 
 def main():
@@ -138,10 +336,21 @@ def main():
     heuristic_ranked = run_phase1(tasks, reference_time)
 
     # Phase 2
-    ml_ranked, ml_scorer = run_phase2(tasks, reference_time)
+    ml_ranked, ml_scorer, train_df, ml_metrics = run_phase2(tasks, reference_time)
 
     # Comparison
-    run_comparison(heuristic_ranked, ml_ranked, k=3)
+    comparison = run_comparison(heuristic_ranked, ml_ranked, k=3)
+
+    # Persist run artifacts
+    export_run_artifacts(
+        tasks=tasks,
+        reference_time=reference_time,
+        heuristic_ranked=heuristic_ranked,
+        ml_ranked=ml_ranked,
+        comparison=comparison,
+        train_df=train_df,
+        ml_metrics=ml_metrics,
+    )
 
     print("\n" + "=" * 70)
     print("  Run complete. See README.md for interpretation of results.")

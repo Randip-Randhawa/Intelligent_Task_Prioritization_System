@@ -1,0 +1,2 @@
+Plots were not generated because matplotlib is not installed.
+Install it with: pip install matplotlib

@@ -1,0 +1,11 @@
+rank,task_id,name,subject,score,difficulty,priority,estimated_hours,available_hours,hours_until_deadline,urgency,difficulty_norm,priority_norm,time_pressure
+1,TASK_004,English Literature Project 4,English Literature,0.7378,5,1,4.6,3.3,5.13,0.9694742442030423,,,1.0
+2,TASK_008,Statistics Project 8,Statistics,0.6919,4,3,3.0,11.9,19.25,0.8853888795205026,,,0.25210084033613445
+3,TASK_003,English Literature Essay 3,English Literature,0.6459,4,4,4.0,24.9,60.99,0.636992123991402,,,0.1606425702811245
+4,TASK_005,Computer Science Presentation 5,Computer Science,0.6302,1,5,0.9,9.0,12.52,0.9254745425958995,,,0.1
+5,TASK_010,English Literature Presentation 10,English Literature,0.6152,5,2,4.6,8.8,62.83,0.6259867828472222,,,0.5227272727272726
+6,TASK_002,English Literature Review 2,English Literature,0.5974,4,4,3.4,32.6,78.96,0.5300131019146825,,,0.10429447852760736
+7,TASK_009,Economics Lab Report 9,Economics,0.5959,4,4,3.7,58.5,77.89,0.5363786712516534,,,0.06324786324786325
+8,TASK_001,Mathematics Presentation 1,Mathematics,0.4893,3,5,3.1,12.0,130.83,0.22127011472552904,,,0.25833333333333336
+9,TASK_006,Statistics Project 6,Statistics,0.4822,3,1,2.8,15.9,25.39,0.8488934368998016,,,0.1761006289308176
+10,TASK_007,Economics Case Study 7,Economics,0.4262,3,2,2.2,30.4,70.8,0.5785977141451719,,,0.07236842105263158

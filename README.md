@@ -113,6 +113,27 @@ python main.py
 
 ---
 
+## Saved Results and Analysis
+
+Each run now creates a timestamped folder under `results/`:
+
+`results/run_YYYYMMDD_HHMMSS/`
+
+Generated artifacts include:
+
+- `heuristic_ranking.csv`
+- `ml_ranking.csv`
+- `ranking_comparison.csv`
+- `summary_metrics.json`
+- `analysis_report.md`
+- PNG charts (if `matplotlib` is available):
+  - `score_comparison_by_task.png`
+  - `score_agreement_scatter.png`
+  - `heuristic_top_tasks.png`
+  - `ml_top_tasks.png`
+
+---
+
 ## Assumptions and Limitations
 
 1. The heuristic weights are hand-tuned and may not reflect every student's

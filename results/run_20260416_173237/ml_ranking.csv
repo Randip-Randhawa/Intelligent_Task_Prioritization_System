@@ -1,0 +1,11 @@
+rank,task_id,name,subject,score,difficulty,priority,estimated_hours,available_hours,hours_until_deadline
+1,TASK_003,English Literature Essay 3,English Literature,0.7467,4,4,4.0,24.9,60.99
+2,TASK_004,English Literature Project 4,English Literature,0.7452,5,1,4.6,3.3,5.13
+3,TASK_002,English Literature Review 2,English Literature,0.7019,4,4,3.4,32.6,78.96
+4,TASK_008,Statistics Project 8,Statistics,0.6981,4,3,3.0,11.9,19.25
+5,TASK_009,Economics Lab Report 9,Economics,0.6933,4,4,3.7,58.5,77.89
+6,TASK_010,English Literature Presentation 10,English Literature,0.6874,5,2,4.6,8.8,62.83
+7,TASK_005,Computer Science Presentation 5,Computer Science,0.6454,1,5,0.9,9.0,12.52
+8,TASK_001,Mathematics Presentation 1,Mathematics,0.6311,3,5,3.1,12.0,130.83
+9,TASK_006,Statistics Project 6,Statistics,0.519,3,1,2.8,15.9,25.39
+10,TASK_007,Economics Case Study 7,Economics,0.5135,3,2,2.2,30.4,70.8

@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-04-16T17:32:37",
+  "reference_time": "2025-06-01T09:00:00",
+  "n_demo_tasks": 10,
+  "n_training_samples": 2000,
+  "ml_metrics": {
+    "mse": 0.003312,
+    "mae": 0.045861,
+    "r2": 0.915,
+    "cv_r2_mean": 0.9047,
+    "cv_r2_std": 0.0148,
+    "n_train": 1600,
+    "n_test": 400
+  },
+  "comparison": {
+    "spearman_rho": 0.8061,
+    "top_3_overlap": 0.6667,
+    "mean_abs_diff": 0.067,
+    "max_abs_diff": 0.1418,
+    "std_diff": 0.0451
+  }
+}

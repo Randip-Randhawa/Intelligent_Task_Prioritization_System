@@ -1,0 +1,11 @@
+task_id,name,heuristic_rank,heuristic_score,ml_rank,ml_score,rank_diff,score_diff
+TASK_004,English Literature Project 4,1,0.7378,2,0.7452,-1,-0.007399999999999962
+TASK_008,Statistics Project 8,2,0.6919,4,0.6981,-2,-0.006200000000000094
+TASK_003,English Literature Essay 3,3,0.6459,1,0.7467,2,-0.1008
+TASK_005,Computer Science Presentation 5,4,0.6302,7,0.6454,-3,-0.015199999999999991
+TASK_010,English Literature Presentation 10,5,0.6152,6,0.6874,-1,-0.07220000000000004
+TASK_002,English Literature Review 2,6,0.5974,3,0.7019,3,-0.10449999999999993
+TASK_009,Economics Lab Report 9,7,0.5959,5,0.6933,2,-0.09740000000000004
+TASK_001,Mathematics Presentation 1,8,0.4893,8,0.6311,0,-0.14179999999999998
+TASK_006,Statistics Project 6,9,0.4822,9,0.519,0,-0.0368
+TASK_007,Economics Case Study 7,10,0.4262,10,0.5135,0,-0.08729999999999993
